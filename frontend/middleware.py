@@ -14,7 +14,7 @@ BACKEND_PORT = os.getenv("BACKEND_PORT", "8090")
 def call_backend_test():
     try:
         # Construct URL with proper protocol and format
-        url = f"https://{DOMAIN_NAME}{ROOT_PATH}/api/app/test/"
+        url = f"http://{DOMAIN_NAME}:8090/api/app/test/"
         print(f"Calling backend URL: {url}")
 
         params = {}

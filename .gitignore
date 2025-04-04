@@ -4,6 +4,7 @@
 # Ignore .idea folder (IDE settings)
 .idea/
 .venv/
+.env
 **/ssl/
 logs/*
 .streamlit/
