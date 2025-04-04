@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     ALLOWED_HOSTS: List[str] = [
         "http://localhost",
     ]
-    PROJECT_NAME: str = "Default ForgeAI Application"
+    PROJECT_NAME: str = "RescueReady Application"
     API_VERSION_STR: str = "/api/v1"
     PROJECT_VERSION: str = "0.0.1"
     BASE_URL: str = "http://localhost"

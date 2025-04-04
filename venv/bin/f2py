@@ -1,0 +1,8 @@
+#!/home/camille/rescueready_hackathon_44e7db20-c31a-4fd2-9ecc-fbff1915de67_repo_1743769343/venv/bin/python
+# -*- coding: utf-8 -*-
+import re
+import sys
+from numpy.f2py.f2py2e import main
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.exit(main())

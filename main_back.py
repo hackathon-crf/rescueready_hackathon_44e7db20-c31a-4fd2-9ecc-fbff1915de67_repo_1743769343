@@ -1,3 +1,10 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv() # Loads variables from .env file into environment
+
+api_key = os.getenv("MISTRAL_API_KEY")
+
 # Import pysqlite3 first
 try:
     import pysqlite3
@@ -48,3 +55,4 @@ if __name__ == '__main__':
         log_level="debug",
         #openapi_url=f"{args.root_path}/openapi.json" if args.root_path else "/openapi.json"
     )
+
