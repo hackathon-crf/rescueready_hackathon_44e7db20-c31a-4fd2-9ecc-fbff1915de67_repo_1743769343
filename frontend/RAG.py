@@ -34,103 +34,51 @@ def get_collections():
 
         # Parse the response
         result = response.json()
-        collections = [result]
+        print(f"result={result}")
+        # collections = [result]
 
         print("Available Collections:")
-        print_json(collections)
+        print_json(result)
 
-        return collections
+        return result
     except Exception as e:
         print(f"Error fetching collections: {str(e)}")
         return []
 
-def get_embeddings(query, collection_names):
+def get_embeddings(query, collection_name):
     """
     Get embeddings for a query using the specified collection.
 
     Args:
         query (str): The query text to get embeddings for
-        collection_name (list): List of collection names to use
+        collection_name (str):collection name to use
 
     Returns:
         The embeddings response
     """
-    # print_step(2, "Getting Embeddings for Query")
-    # try:
-    #     # Construct the URL
-    #     url = f"{RAG_API_ENDPOINT}/inferencing/get_embeddings"
-
-    #     # Ensure collection is properly formatted
-    #     if isinstance(collection_name, list):
-    #         collection_name = collection_name[0] if collection_name else ""
-
-    #     # Clean up the collection name
-    #     collection_name = str(collection_name).strip().strip('"\'[]')
-
-    #     # Set up the parameters
-    #     params = {
-    #         "query": query,
-    #         "collection_name": collection_name,
-    #         "api_key": MISTRAL_API_KEY
-    #     }
-
-    #     print(f"Calling: {url}")
-    #     print("Parameters:")
-    #     print_json({k: v if k != "api_key" else "****" for k, v in params.items()})
-
-    #     # Make the request
-    #     response = requests.post(url, params=params)
-
-    #     print(f"Status Code: {response.status_code}")
-
-    #     if response.status_code != 200:
-    #         print(f"Error: {response.status_code}")
-    #         print(f"Response: {response.text}")
-    #         return None
-
-    #     # Try to parse as JSON
-    #     try:
-    #         result = response.json()
-    #         print("\nEmbeddings Response:")
-
-    #         # Check if the result is a string containing a large embedding vector
-    #         if isinstance(result, str) and len(result) > 1000:
-    #             # If it's a very long string (likely an embedding vector), just show a preview
-    #             print(f"Received embedding vector (showing first 100 chars): {result[:100]}...")
-    #             print(f"Full vector length: {len(result)} characters")
-    #         else:
-    #             print_json(result)
-
-    #         return result
-    #     except json.JSONDecodeError:
-    #         # If it's not JSON, just return the text
-    #         print("\nResponse (text):")
-    #         print(response.text[:500] + "..." if len(response.text) > 500 else response.text)
-    #         return response.text
-
-    # except Exception as e:
-    #     print(f"Error getting embeddings: {str(e)}")
-    #     import traceback
-    #     print(traceback.format_exc())
-    #     return None
-    print("Getting Embeddings for Query")
+    print_step(2, "Getting Embeddings for Query")
     try:
-        # Construct the URL
         url = f"{RAG_API_ENDPOINT}/inferencing/get_embeddings"
 
-        # Ensure collection names are properly formatted
-        collection_names = [name.strip().strip('"\'[]') for name in collection_names]
-
-        # Set up the parameters
         params = {
             "query": query,
-            "collection_name": json.dumps(collection_names),  # Send as JSON array string
+            "collection_name": collection_name,
+            "api_key": MISTRAL_API_KEY
+        }
+        if isinstance(collection_name, list):
+            collection_name = collection_name[0] if collection_name else ""
+
+        collection_name = str(collection_name).strip().strip('"\'[]')
+
+        params = {
+            "query": query,
+            "collection_name": collection_name,
             "api_key": MISTRAL_API_KEY
         }
 
         print(f"Calling: {url}")
         print("Parameters:")
-        print(json.dumps({k: v if k != "api_key" else "****" for k, v in params.items()}, indent=2))
+        print_json({k: v if k != "api_key" else "****" for k, v in params.items()})
 
         # Make the request
         response = requests.post(url, params=params)
@@ -153,7 +101,7 @@ def get_embeddings(query, collection_names):
                 print(f"Received embedding vector (showing first 100 chars): {result[:100]}...")
                 print(f"Full vector length: {len(result)} characters")
             else:
-                print(json.dumps(result, indent=2))
+                print_json(result)
 
             return result
         except json.JSONDecodeError:
@@ -167,6 +115,7 @@ def get_embeddings(query, collection_names):
         import traceback
         print(traceback.format_exc())
         return None
+    
 
 def query_llm_with_embeddings(query, embeddings, context=None):
     """
@@ -192,9 +141,17 @@ def query_llm_with_embeddings(query, embeddings, context=None):
 
         # Create system prompt
         system_prompt = """
-        You are an expert assistant that uses semantic embeddings to provide relevant information.
-        Use the provided embeddings as context to answer the user's query.
-        Provide a clear and concise response based on the semantic meaning captured by the embeddings.
+        Tu es une application qui remplace les formateurs de la Croix-Rouge. Tu dois proposer à l'utilisateur (bénévole formé aux premiers secours) 
+        des cas concrets en utilisant les embeddings fournis comme contexte pour entrainer l'utilisateur, en ne lui donnant pas toutes les informations en même temps, mais au fur et à mesure de leur découverte. 
+        Par exemple, au départ, tu ne lui donnes que les informations pour lesquelles il a été appelé. 
+        Puis, lorsque l'utilisateur arrive sur place, tu lui fournis les informations visuelles qu'il peut constater en regardant la scène dans son ensemble, 
+        avant de lui demander ce qu'il ferait dans cette situation. 
+        Tu lui fournir des informations supplémentaires en fonction de sa réponse: Par exemple, s'il te dit « interroger les témoins », tu lui donnes les informations correspondantes. 
+        S'il te dit prendre la tension de la victime, tu lui donnes l'information correspondante, puis tu attends sa prochaine action. 
+        Tu dois évaluer ses actions et son analyse sur la base de la partie Évaluation de la fiche de cas.
+        Fournis toujours une réponse claire et concise basée sur le sens sémantique capturé par les embeddings. 
+        Commence directement par le scénario sans dire "Bien sûr, voici...".
+        Ne rappelle pas les étapes à suivre et finis toujours par la question "Que faites vous ou qu'en déduisez-vous?"
         """
 
         # Create user prompt with embeddings
@@ -255,21 +212,4 @@ def query_llm_with_embeddings(query, embeddings, context=None):
         print(traceback.format_exc())
         return None
 
-collection_names = get_collections()
-# Select the first collection or use a default one
-# collection_name = "guide_pedagogique_psc"
-# Sample emergency context
-query = "que faire en cas de crise cardiaque?"
-embeddings = get_embeddings(query, collection_names)
-# Select the first collection or use a default one
-query = "arret cardiaque"
-
-# Sample emergency context
-context = {
-    "situation": "Person has fallen from a ladder and is unconscious",
-    "emergency_type": "Fall injury",
-    "severity": "High",
-    "age_group": "Adult"
-}
-query_llm_with_embeddings(query, embeddings, context)
 

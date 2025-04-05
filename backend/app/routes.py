@@ -66,3 +66,19 @@ async def test():
         }
 
     # Registering routes
+
+
+from fastapi import FastAPI, Request
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/chat")
+async def chat_endpoint(request: ChatRequest):
+    print("ICI")
+    user_msg = request.message
+    # appelle ton modèle ou autre ici
+    return {"response": f"Tu as dit : {user_msg}"}

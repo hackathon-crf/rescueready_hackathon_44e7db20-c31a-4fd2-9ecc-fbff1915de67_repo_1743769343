@@ -4,6 +4,7 @@ import csv
 import datetime
 
 MODEL_NAME= "mistral-large-latest"
+MODEL_NAME= "mistral-small"
 LOG_FILE = "mistral_usage_log.csv"
 
 def call_mistral():
