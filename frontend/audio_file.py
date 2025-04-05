@@ -26,9 +26,8 @@ def tts_huggingface(text: str, filename="tts_output.wav"):
     # url = "https://api-inference.huggingface.co/models/plgnk/tts-french-model"
     url = "https://api-inference.huggingface.co/models/facebook/fastspeech2-en-ljspeech"
     headers = {"Authorization": f"Bearer {HUGGINGFACE_API_TOKEN}"}
-    txt2 = "je suis un test"
     for attempt in range(retries):
-        response = requests.post(url, headers=headers, json={"inputs": txt2})
+        response = requests.post(url, headers=headers, json={"inputs": text})
         
         if response.status_code == 200:
             with open(filename, "wb") as f:
