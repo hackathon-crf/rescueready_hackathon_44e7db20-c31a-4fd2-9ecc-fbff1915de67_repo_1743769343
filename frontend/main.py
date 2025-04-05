@@ -5,6 +5,12 @@ from frontend.mistral import call_mistral
 from frontend.RAG import get_embeddings, get_collections, query_llm_with_embeddings
 from frontend.chatbot import display_chatbot
 import requests
+import threading
+import time
+import os
+from frontend.audio_file import record_audio, tts_huggingface, transcribe_audio, send_to_backend
+
+recording_flag = {"active": False}
 
 SYSTEM_PROMPT = """
             Tu es une application qui remplace les formateurs de la Croix-Rouge. Tu dois proposer à l'utilisateur (bénévole formé aux premiers secours) 
@@ -71,6 +77,10 @@ def display_conversation():
             """, unsafe_allow_html=True)
 
 def handle_user_interaction():
+    if "recording" not in st.session_state:
+        st.session_state.recording = False
+    if "transcribed_text" not in st.session_state:
+        st.session_state.transcribed_text = ""
     user_input = st.text_input("Tapez un message...")
     if st.button("Envoyer"):
         if user_input.strip():
@@ -82,6 +92,53 @@ def handle_user_interaction():
             st.rerun()
         else:
             st.warning("Veuillez entrer un message.")
+    if st.button("🎙 Record Voice"):
+        if not st.session_state.recording:
+            st.session_state.recording = True
+            st.session_state.start_time = time.time()
+            recording_flag["active"] = True
+            filename = "output.wav"
+            duration = 6
+            st.info("🎙 Enregistrement en cours... Parlez maintenant")
+            threading.Thread(target=record_audio, args=(filename, duration, recording_flag)).start()
+
+    # Bouton pour arrêter et transcrire
+    if st.button("⏹ Stop Recording"):
+        recording_flag["active"] = False
+        st.session_state.recording = False
+
+        transcription_file = "last_transcription.txt"
+        text = ""
+        file_mtime_before = os.path.getmtime(transcription_file) if os.path.exists(transcription_file) else 0
+
+        with st.spinner("⏳ Transcription en cours..."):
+            timeout = 15  # secondes
+            start = time.time()
+
+            while time.time() - start < timeout:
+                if os.path.exists(transcription_file):
+                    file_mtime_after = os.path.getmtime(transcription_file)
+                    if file_mtime_after > file_mtime_before:
+                        with open(transcription_file, "r") as f:
+                            text = f.read().strip()
+                        if text:
+                            break
+                time.sleep(0.2)
+
+        if text:
+            st.session_state.transcribed_text = text
+            st.success("Transcription terminée ✅")
+
+            # Ajouter la transcription à la conversation comme un message utilisateur
+            st.session_state["conversation"].append(text)
+            st.session_state["messages"].append({"role": "user", "content": text})
+            answer = answer_llm(text)
+            st.session_state["conversation"].append(f"Chatbot : {answer}")
+            st.session_state["messages"].append({"role": "assistant", "content": answer})
+            st.experimental_rerun()
+        else:
+            st.warning("⚠️ Transcription non reçue à temps.")
+        
 
 def main():
     st.sidebar.title("Navigation")
@@ -109,6 +166,6 @@ def main():
             display_conversation()
             handle_user_interaction()
 
-        st.subheader("Enregistrement vocal")
-        if st.button("Enregistrer un message vocal"):
-            st.write("Enregistrement en cours... (Non implémenté)")
+        # st.subheader("Enregistrement vocal")
+        # if st.button("Enregistrer un message vocal"):
+        #     st.write("Enregistrement en cours... (Non implémenté)")

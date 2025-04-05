@@ -6,3 +6,8 @@ uvicorn==0.30.1
 python-dotenv~=1.0.0
 pysqlite3
 mistralai
+sounddevice 
+scipy 
+requests
+git+https://github.com/openai/whisper.git
+transformers

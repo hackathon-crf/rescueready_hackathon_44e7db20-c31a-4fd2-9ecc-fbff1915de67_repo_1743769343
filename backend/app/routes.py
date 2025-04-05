@@ -1,8 +1,17 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.services import test_service
 from settings.config import settings
+import requests
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
+
+app = FastAPI()
+
+HUGGINGFACE_API_TOKEN = os.getenv("HUGGINGFACE_API_TOKEN")
+HF_API_URL = "https://api-inference.huggingface.co/models/openai/whisper-small"
 
 app_router = APIRouter(
     prefix="/api/app",
@@ -65,6 +74,20 @@ async def test():
             }
         }
 
+@app_router.post("/transcribe/")
+async def transcribe_audio(file: UploadFile = File(...)):
+    headers = {"Authorization": f"Bearer {HUGGINGFACE_API_TOKEN}"}
+    audio_data = await file.read()
+    response = requests.post(
+        HF_API_URL,
+        headers=headers,
+        data=audio_data,
+        params={"language": "fr", "task": "transcribe"}
+    )
+    if response.status_code == 200:
+        return {"text": response.json().get("text", "")}
+    else:
+        return {"error": f"{response.status_code}: {response.text}"}
     # Registering routes
 
 
@@ -82,3 +105,5 @@ async def chat_endpoint(request: ChatRequest):
     user_msg = request.message
     # appelle ton modèle ou autre ici
     return {"response": f"Tu as dit : {user_msg}"}
+
+
