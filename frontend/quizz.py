@@ -3,9 +3,9 @@ from frontend.RAG import get_embeddings, get_collections, query_llm_with_embeddi
 import ast  # Ajoutez cette ligne pour importer le module ast
 
 SYSTEM3_PROMPT = "Tu es une application qui propose des quizz pour accompagner les bénévoles de la Croix Rouge \
-                dans leur formation aux premiers secours. Tu proposeras un quizz de 10 questions avec 4 choix \
+                dans leur formation aux premiers secours. Tu proposeras un quizz de 5 questions avec 4 choix \
                 possibles mais 1 seule réponse correcte, sur la base des documents inclus en Embedding, et qui \
-                compte les points sur 10 et donne le score a la fin des 10 questions. \
+                compte les points sur 5 et donne le score a la fin des 5 questions. \
 				retourne une chaîne de caractères représentant une liste de dictionnaires avec la structure: question: ..., choices: ..., correct_answer: ..."
 
 def start_quizz(category):
@@ -36,13 +36,14 @@ def start_quizz(category):
 def parse_questions_from_response(response):
     try:
         # Extraire le contenu du bloc de code de la réponse
-        code_block_start = response.find("```python") + len("```python")
+        code_block_start = response.find("question")
         code_block_end = response.find("```", code_block_start)
         code_block = response[code_block_start:code_block_end].strip()
-
+        code_block2 = '[{"' + code_block
+        print('code block = ', code_block2)
         # Évaluer le code Python pour obtenir la liste de dictionnaires
-        questions_list = ast.literal_eval(code_block)
-        return questions_list
+        # questions_list = ast.literal_eval(code_block)
+        return code_block2
     except (SyntaxError, ValueError):
         # Gérer les erreurs si la réponse n'est pas dans le format attendu
         st.error("Erreur lors de l'analyse de la réponse du modèle.")
