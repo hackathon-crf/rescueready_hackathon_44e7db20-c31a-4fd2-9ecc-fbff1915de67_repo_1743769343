@@ -133,6 +133,8 @@ def query_llm_with_embeddings(query, embeddings, messages):
     try:
         print("User Prompt:\n")
         print(f"Query: {query}\n")
+        print(f"messages: {messages}\n")
+
 
         # Mistral API setup
         mistral_api_url = "https://api.mistral.ai/v1/chat/completions"
@@ -170,7 +172,7 @@ def query_llm_with_embeddings(query, embeddings, messages):
         llm_text = mistral_result.get('choices', [{}])[0].get('message', {}).get('content', '')
 
         print("\nMistral Response:")
-        print(llm_text[:500] + "..." if len(llm_text) > 500 else llm_text)
+        print(llm_text)
         return llm_text
     except Exception as e:
             print(f"Error querying LLM: {str(e)}")

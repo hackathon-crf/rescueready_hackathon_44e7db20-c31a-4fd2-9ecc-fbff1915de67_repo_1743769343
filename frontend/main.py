@@ -54,10 +54,11 @@ SYSTEM_PROMPT = """
             Fournis toujours une réponse claire et concise basée sur le sens sémantique capturé par les embeddings.
             Commence directement par le scénario sans dire "Bien sûr, voici...".
             Ne rappelle pas les étapes à suivre et finis la question initiale "Que faites-vous ou qu'en déduisez-vous ?
-            Ensuite adapte toi a la reponse de l'utilisateur, si sa réponse n'est pas assez précise, demande lui de préciser, par exemple lorsqu'il dit faire une action, demande lui comment il la fait.
+            Ensuite adapte toi a la reponse de l'utilisateur, si sa réponse n'est pas assez précise, demande lui de préciser, par exemple lorsqu'il dit faire une action, demande lui de te détailler les étapes.
+            Par exemple pour la PLS vérifie que les critères d'évaluation dans les fiches V du "PSE guide pratique 2023" sont validés.
             Si l'étape décrite te convient, c'est à dire qu'elle est conforme aux embeddings et notamment le "PSE guide pratique 2023", dis que ça te convient et pose la question pour le faire passer à l'action ou aux constatations suivantes.
             Si le participant désire appeler les secours, tu joueras alors le rôle de l'interlocuteur. Tu pourras alors lui demander les informations nécessaires à la compréhension de la situation, des gestes réalisés, des données mesurées.
-            Un dialogue peut s'installer avec le secouriste et des conseils peuvent être donnés. Pour cela, tu t'appuies sur les embeddings et notamment le "PSE guide pratique 2023" partie "transmission du bilan".
+            Un dialogue peut s'installer avec le secouriste et des conseils peuvent être donnés. Pour cela, tu t'appuies sur les embeddings et notamment le "PSE guide pratique 2023" partie III.f "transmission du bilan".
             Tu bases tes réponses et tes conseils sur le "PSE guide pratique 2023" notamment en t'appuyant sur les parties "conduite à tenir" afin de fournir des réponses crédibles et médicalement fiables.
             Si il manque des précisions et que après avoir demandé des précisions, si l'utilisateur ne te les donne pas, donne les lui en faisant référence aux embeddings et notamment le "PSE guide pratique 2023 ou au "CRF_Memento operationnel_2024_DEF"
             Tu mets fin à la simulation quand tu juges que la situation a été bien gérée, soit qu'elle ait été réglée par l'utilisateur, soit que les secours aient pris le relais. L'utilisateur peut également demander à mettre fin à la simulation de manière prématurée.
@@ -164,9 +165,16 @@ def handle_user_interaction():
             st.session_state["conversation"].append(text)
             st.session_state["messages"].append({"role": "user", "content": text})
             answer = answer_llm(text)
+            audio_file = tts_huggingface(answer)
+
             st.session_state["conversation"].append(f"Chatbot : {answer}")
             st.session_state["messages"].append({"role": "assistant", "content": answer})
             st.experimental_rerun()
+            # if audio_file:
+            #     st.audio(audio_file, format="audio/wav")
+            # else:
+            #     if os.path.exists("tts_output.wav"):
+            #         st.audio("tts_output.wav", format="audio/wav")
         else:
             st.warning("⚠️ Transcription non reçue à temps.")
 
@@ -185,33 +193,35 @@ def send_message():
     else:
         st.warning("Veuillez entrer un message.")
 
+def display_simulation(categories):
+    st.title("Simulation")
+
+        # Liste déroulante avec les catégories
+    category = st.selectbox("Choisissez une catégorie", list(categories.values()))
+    if st.button("Démarrer la simulation"):
+        st.session_state["simulation_started"] = True
+        start_simulation(category)
+
+    if st.session_state.get("simulation_started", False):
+        display_conversation()
+        handle_user_interaction()
 
 def main():
     st.sidebar.title("Navigation")
     # selected_page = st.sidebar.radio("Go to", ["RescueReady App"])
     selected_page = st.sidebar.radio("Go to", ["RescueReady Simulation", "RescueReady Quizz"])
+    categories = {
+        "A": "Protection et sécurité",
+        "B": "Urgences vitales",
+        "C": "Affections médicales",
+        "D": "Affections traumatiques",
+        "E": "Affections circonstancielles",
+        "F": "Souffrance psychique et comportements inhabituels",
+        "H": "Situations particulières"
+    }
     
     if selected_page == "RescueReady Simulation":
-        st.title("Simulation")
-
-        # Liste déroulante avec les catégories
-        categories = {
-            "A": "Protection et sécurité",
-            "B": "Urgences vitales",
-            "C": "Affections médicales",
-            "D": "Affections traumatiques",
-            "E": "Affections circonstancielles",
-            "F": "Souffrance psychique et comportements inhabituels",
-            "H": "Situations particulières"
-        }
-        category = st.selectbox("Choisissez une catégorie", list(categories.values()))
-        if st.button("Démarrer la simulation"):
-            st.session_state["simulation_started"] = True
-            start_simulation(category)
-
-        if st.session_state.get("simulation_started", False):
-            display_conversation()
-            handle_user_interaction()
+        display_simulation(categories)
 
     elif selected_page == "RescueReady Quizz":
-        display_quiz()
+        display_quiz(categories)
